@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "257975647647",
+    "project_id": "proximity-app-a693a",
+    "storage_bucket": "proximity-app-a693a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:257975647647:android:5266f024d9685a997dd1aa",
+        "android_client_info": {
+          "package_name": "com.proximityapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "257975647647-40t7v8kpfi7sd5rke0tr03omr6ig55tg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-8XUPP9gJK0cO644vs0NUHhZrdX7oSTk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "257975647647-40t7v8kpfi7sd5rke0tr03omr6ig55tg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
