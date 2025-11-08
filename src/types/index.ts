@@ -28,6 +28,7 @@ export interface Group {
   memberCount: number;
   isActive: boolean;
   privacyLevel: 'public' | 'private' | 'invite-only';
+  inviteCode?: string; // Unique code for sharing/joining via link
 }
 
 export interface GroupMembership {
@@ -37,6 +38,18 @@ export interface GroupMembership {
   joinedAt: Date;
   isBroadcasting: boolean; // Whether user is actively broadcasting location for this group
   isVisible: boolean; // Whether user is visible to other group members
+}
+
+export interface GroupInvitation {
+  id: string;
+  groupId: string;
+  inviterId: string; // User who sent the invitation
+  inviteeId?: string; // User being invited (if found by email)
+  inviteeEmail: string; // Email of person being invited
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
+  createdAt: Date;
+  expiresAt: Date;
+  message?: string; // Optional personal message
 }
 
 export interface Location {
@@ -161,6 +174,7 @@ export type GroupsStackParamList = {
   CreateGroup: undefined;
   JoinGroup: undefined;
   GroupSettings: { groupId: string };
+  InviteMembers: { groupId: string };
 };
 
 // Utility types

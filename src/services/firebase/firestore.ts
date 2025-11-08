@@ -7,12 +7,38 @@ import {
   UserProfile,
   Group,
   GroupMembership,
+  GroupInvitation,
   UserLocation,
   ProximityAlert,
   ChatMessage,
   MeetRequest,
   GroupEvent,
 } from '../../types';
+
+// Helper function to convert Firestore Timestamps to Dates
+const convertTimestamps = (data: any): any => {
+  if (data === null || data === undefined) {
+    return data;
+  }
+
+  if (data?.toDate && typeof data.toDate === 'function') {
+    return data.toDate();
+  }
+
+  if (Array.isArray(data)) {
+    return data.map(convertTimestamps);
+  }
+
+  if (typeof data === 'object') {
+    const converted: any = {};
+    Object.keys(data).forEach(key => {
+      converted[key] = convertTimestamps(data[key]);
+    });
+    return converted;
+  }
+
+  return data;
+};
 
 // Generic Firestore operations
 
@@ -28,7 +54,8 @@ export const getDocument = async <T>(
     if (!doc.exists) {
       return null;
     }
-    return { id: doc.id, ...doc.data() } as T;
+    const data = convertTimestamps(doc.data());
+    return { id: doc.id, ...data } as T;
   } catch (error) {
     console.error(`Error getting document from ${collection}:`, error);
     throw error;
@@ -98,7 +125,10 @@ export const queryDocuments = async <T>(
     });
 
     const snapshot = await query.get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
+    return snapshot.docs.map(doc => {
+      const data = convertTimestamps(doc.data());
+      return { id: doc.id, ...data } as T;
+    });
   } catch (error) {
     console.error(`Error querying documents from ${collection}:`, error);
     throw error;
@@ -174,6 +204,31 @@ export const getUserGroups = async (userId: string): Promise<Group[]> => {
   }
 };
 
+export const getGroupMembers = async (groupId: string): Promise<Array<GroupMembership & { userProfile?: UserProfile }>> => {
+  try {
+    // Get all memberships for this group
+    const memberships = await queryDocuments<GroupMembership>(
+      COLLECTIONS.GROUP_MEMBERSHIPS,
+      [{ field: 'groupId', operator: '==', value: groupId }]
+    );
+
+    // Fetch user profiles for each member
+    const memberPromises = memberships.map(async (membership) => {
+      const userProfile = await getUserProfile(membership.userId);
+      return {
+        ...membership,
+        userProfile: userProfile || undefined,
+      };
+    });
+
+    const members = await Promise.all(memberPromises);
+    return members;
+  } catch (error) {
+    console.error('Error getting group members:', error);
+    throw error;
+  }
+};
+
 // Group Membership operations
 
 export const addGroupMember = async (
@@ -225,6 +280,417 @@ export const updateGroupMembership = async (
 ): Promise<void> => {
   const membershipId = `${userId}_${groupId}`;
   await updateDocument(COLLECTIONS.GROUP_MEMBERSHIPS, membershipId, updates);
+};
+
+export const isUserMemberOfGroup = async (
+  userId: string,
+  groupId: string
+): Promise<boolean> => {
+  try {
+    const membershipId = `${userId}_${groupId}`;
+    const membership = await getDocument<GroupMembership>(
+      COLLECTIONS.GROUP_MEMBERSHIPS,
+      membershipId
+    );
+    return membership !== null;
+  } catch (error) {
+    console.error('Error checking group membership:', error);
+    return false;
+  }
+};
+
+export const searchGroups = async (searchQuery: string): Promise<Group[]> => {
+  try {
+    // Firestore doesn't support full-text search, so we'll get all active groups
+    // and filter client-side for now
+    const snapshot = await firestore()
+      .collection(COLLECTIONS.GROUPS)
+      .where('isActive', '==', true)
+      .get();
+
+    const groups = snapshot.docs.map(doc => {
+      const data = convertTimestamps(doc.data());
+      return { id: doc.id, ...data } as Group;
+    });
+
+    if (!searchQuery.trim()) {
+      return groups;
+    }
+
+    // Filter by name or description containing search query (case-insensitive)
+    const query = searchQuery.toLowerCase();
+    return groups.filter(group =>
+      group.name.toLowerCase().includes(query) ||
+      (group.description && group.description.toLowerCase().includes(query))
+    );
+  } catch (error) {
+    console.error('Error searching groups:', error);
+    throw error;
+  }
+};
+
+export const getPublicGroups = async (): Promise<Group[]> => {
+  try {
+    return await queryDocuments<Group>(COLLECTIONS.GROUPS, [
+      { field: 'privacyLevel', operator: '==', value: 'public' },
+      { field: 'isActive', operator: '==', value: true },
+    ]);
+  } catch (error) {
+    console.error('Error getting public groups:', error);
+    throw error;
+  }
+};
+
+export const updateGroup = async (
+  groupId: string,
+  updates: Partial<Omit<Group, 'id'>>
+): Promise<void> => {
+  try {
+    await updateDocument(COLLECTIONS.GROUPS, groupId, updates);
+  } catch (error) {
+    console.error('Error updating group:', error);
+    throw error;
+  }
+};
+
+export const deleteGroup = async (groupId: string): Promise<void> => {
+  try {
+    // Delete all memberships first
+    const memberships = await queryDocuments<GroupMembership>(
+      COLLECTIONS.GROUP_MEMBERSHIPS,
+      [{ field: 'groupId', operator: '==', value: groupId }]
+    );
+
+    // Delete all membership documents
+    await Promise.all(
+      memberships.map(membership =>
+        deleteDocument(COLLECTIONS.GROUP_MEMBERSHIPS, membership.id)
+      )
+    );
+
+    // Delete all pending invitations for this group
+    const invitations = await queryDocuments<GroupInvitation>(
+      COLLECTIONS.GROUP_INVITATIONS,
+      [{ field: 'groupId', operator: '==', value: groupId }]
+    );
+
+    await Promise.all(
+      invitations.map(invitation =>
+        deleteDocument(COLLECTIONS.GROUP_INVITATIONS, invitation.id)
+      )
+    );
+
+    // Delete the group
+    await deleteDocument(COLLECTIONS.GROUPS, groupId);
+  } catch (error) {
+    console.error('Error deleting group:', error);
+    throw error;
+  }
+};
+
+// Group Invite Code operations
+
+export const generateGroupInviteCode = async (groupId: string): Promise<string> => {
+  try {
+    // Generate a random 8-character code
+    const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude similar looking characters
+    let inviteCode = '';
+    for (let i = 0; i < 8; i++) {
+      inviteCode += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+
+    // Check if code already exists
+    const existingGroups = await queryDocuments<Group>(
+      COLLECTIONS.GROUPS,
+      [{ field: 'inviteCode', operator: '==', value: inviteCode }]
+    );
+
+    // If code exists, recursively generate a new one
+    if (existingGroups.length > 0) {
+      return generateGroupInviteCode(groupId);
+    }
+
+    // Update group with invite code
+    await updateDocument(COLLECTIONS.GROUPS, groupId, { inviteCode });
+
+    return inviteCode;
+  } catch (error) {
+    console.error('Error generating group invite code:', error);
+    throw error;
+  }
+};
+
+export const getGroupByInviteCode = async (inviteCode: string): Promise<Group | null> => {
+  try {
+    const groups = await queryDocuments<Group>(
+      COLLECTIONS.GROUPS,
+      [{ field: 'inviteCode', operator: '==', value: inviteCode.toUpperCase() }]
+    );
+
+    if (groups.length === 0) {
+      return null;
+    }
+
+    return groups[0];
+  } catch (error) {
+    console.error('Error getting group by invite code:', error);
+    throw error;
+  }
+};
+
+export const joinGroupWithInviteCode = async (
+  userId: string,
+  inviteCode: string
+): Promise<Group | null> => {
+  try {
+    const group = await getGroupByInviteCode(inviteCode);
+
+    if (!group) {
+      throw new Error('Invalid invite code');
+    }
+
+    if (!group.isActive) {
+      throw new Error('This group is no longer active');
+    }
+
+    // Check if user is already a member
+    const isMember = await isUserMemberOfGroup(userId, group.id);
+    if (isMember) {
+      throw new Error('You are already a member of this group');
+    }
+
+    // Add user to group
+    await addGroupMember(userId, group.id, 'member');
+
+    return group;
+  } catch (error) {
+    console.error('Error joining group with invite code:', error);
+    throw error;
+  }
+};
+
+// Group Invitation operations
+
+export const createGroupInvitation = async (
+  groupId: string,
+  inviterId: string,
+  inviteeEmail: string,
+  message?: string
+): Promise<string> => {
+  try {
+    // Check if invitation already exists and is pending
+    const existingInvitations = await queryDocuments<GroupInvitation>(
+      COLLECTIONS.GROUP_INVITATIONS,
+      [
+        { field: 'groupId', operator: '==', value: groupId },
+        { field: 'inviteeEmail', operator: '==', value: inviteeEmail },
+        { field: 'status', operator: '==', value: 'pending' },
+      ]
+    );
+
+    if (existingInvitations.length > 0) {
+      throw new Error('An invitation to this email already exists for this group');
+    }
+
+    // Try to find user by email
+    const users = await queryDocuments<UserProfile>(
+      COLLECTIONS.USERS,
+      [{ field: 'email', operator: '==', value: inviteeEmail }]
+    );
+
+    const invitationData: Omit<GroupInvitation, 'id'> = {
+      groupId,
+      inviterId,
+      inviteeEmail,
+      inviteeId: users.length > 0 ? users[0].id : undefined,
+      status: 'pending',
+      createdAt: firestore.FieldValue.serverTimestamp() as any,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) as any, // 7 days from now
+      message,
+    };
+
+    const docRef = await firestore().collection(COLLECTIONS.GROUP_INVITATIONS).add(invitationData);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error creating group invitation:', error);
+    throw error;
+  }
+};
+
+export const getGroupInvitations = async (
+  groupId: string,
+  status?: GroupInvitation['status']
+): Promise<Array<GroupInvitation & { inviterProfile?: UserProfile; groupDetails?: Group }>> => {
+  try {
+    const conditions: Array<{ field: string; operator: FirebaseFirestoreTypes.WhereFilterOp; value: any }> = [
+      { field: 'groupId', operator: '==', value: groupId },
+    ];
+
+    if (status) {
+      conditions.push({ field: 'status', operator: '==', value: status });
+    }
+
+    const invitations = await queryDocuments<GroupInvitation>(
+      COLLECTIONS.GROUP_INVITATIONS,
+      conditions
+    );
+
+    // Fetch inviter profiles and group details
+    const enrichedInvitations = await Promise.all(
+      invitations.map(async invitation => {
+        const inviterProfile = await getUserProfile(invitation.inviterId);
+        const groupDetails = await getGroup(invitation.groupId);
+        return {
+          ...invitation,
+          inviterProfile: inviterProfile || undefined,
+          groupDetails: groupDetails || undefined,
+        };
+      })
+    );
+
+    return enrichedInvitations;
+  } catch (error) {
+    console.error('Error getting group invitations:', error);
+    throw error;
+  }
+};
+
+export const getUserInvitations = async (
+  userId: string,
+  status?: GroupInvitation['status']
+): Promise<Array<GroupInvitation & { inviterProfile?: UserProfile; groupDetails?: Group }>> => {
+  try {
+    // Get user's email
+    const userProfile = await getUserProfile(userId);
+    if (!userProfile) {
+      return [];
+    }
+
+    const conditions: Array<{ field: string; operator: FirebaseFirestoreTypes.WhereFilterOp; value: any }> = [
+      { field: 'inviteeEmail', operator: '==', value: userProfile.email },
+    ];
+
+    if (status) {
+      conditions.push({ field: 'status', operator: '==', value: status });
+    }
+
+    const invitations = await queryDocuments<GroupInvitation>(
+      COLLECTIONS.GROUP_INVITATIONS,
+      conditions
+    );
+
+    // Fetch inviter profiles and group details
+    const enrichedInvitations = await Promise.all(
+      invitations.map(async invitation => {
+        const inviterProfile = await getUserProfile(invitation.inviterId);
+        const groupDetails = await getGroup(invitation.groupId);
+        return {
+          ...invitation,
+          inviterProfile: inviterProfile || undefined,
+          groupDetails: groupDetails || undefined,
+        };
+      })
+    );
+
+    return enrichedInvitations;
+  } catch (error) {
+    console.error('Error getting user invitations:', error);
+    throw error;
+  }
+};
+
+export const acceptGroupInvitation = async (
+  invitationId: string,
+  userId: string
+): Promise<void> => {
+  try {
+    const invitation = await getDocument<GroupInvitation>(
+      COLLECTIONS.GROUP_INVITATIONS,
+      invitationId
+    );
+
+    if (!invitation) {
+      throw new Error('Invitation not found');
+    }
+
+    if (invitation.status !== 'pending') {
+      throw new Error('Invitation is no longer pending');
+    }
+
+    // Check if invitation has expired
+    const now = new Date();
+    const expiresAt = invitation.expiresAt as any;
+    if (expiresAt.toDate && expiresAt.toDate() < now) {
+      // Update invitation status to expired
+      await updateDocument(COLLECTIONS.GROUP_INVITATIONS, invitationId, { status: 'rejected' });
+      throw new Error('Invitation has expired');
+    }
+
+    // Add user to group
+    await addGroupMember(userId, invitation.groupId, 'member');
+
+    // Update invitation status
+    await updateDocument(COLLECTIONS.GROUP_INVITATIONS, invitationId, {
+      status: 'accepted',
+      inviteeId: userId,
+    });
+  } catch (error) {
+    console.error('Error accepting group invitation:', error);
+    throw error;
+  }
+};
+
+export const rejectGroupInvitation = async (invitationId: string): Promise<void> => {
+  try {
+    const invitation = await getDocument<GroupInvitation>(
+      COLLECTIONS.GROUP_INVITATIONS,
+      invitationId
+    );
+
+    if (!invitation) {
+      throw new Error('Invitation not found');
+    }
+
+    if (invitation.status !== 'pending') {
+      throw new Error('Invitation is no longer pending');
+    }
+
+    await updateDocument(COLLECTIONS.GROUP_INVITATIONS, invitationId, {
+      status: 'rejected',
+    });
+  } catch (error) {
+    console.error('Error rejecting group invitation:', error);
+    throw error;
+  }
+};
+
+export const cancelGroupInvitation = async (invitationId: string, userId: string): Promise<void> => {
+  try {
+    const invitation = await getDocument<GroupInvitation>(
+      COLLECTIONS.GROUP_INVITATIONS,
+      invitationId
+    );
+
+    if (!invitation) {
+      throw new Error('Invitation not found');
+    }
+
+    // Only the inviter can cancel the invitation
+    if (invitation.inviterId !== userId) {
+      throw new Error('You do not have permission to cancel this invitation');
+    }
+
+    if (invitation.status !== 'pending') {
+      throw new Error('Invitation is no longer pending');
+    }
+
+    await updateDocument(COLLECTIONS.GROUP_INVITATIONS, invitationId, {
+      status: 'cancelled',
+    });
+  } catch (error) {
+    console.error('Error cancelling group invitation:', error);
+    throw error;
+  }
 };
 
 // Location operations

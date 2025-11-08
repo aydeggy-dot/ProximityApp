@@ -102,11 +102,16 @@ export const borderRadius = {
 
 export const typography = {
   fontFamily: {
-    regular: 'System',
-    medium: 'System',
-    bold: 'System',
+    regular: 'SF Pro Text',
+    medium: 'SF Pro Text',
+    bold: 'SF Pro Display',
+    // Fallbacks for Android
+    regularAndroid: 'Roboto',
+    mediumAndroid: 'Roboto-Medium',
+    boldAndroid: 'Roboto-Bold',
   },
   fontSize: {
+    xxs: 10,
     xs: 12,
     sm: 14,
     md: 16,
@@ -114,17 +119,21 @@ export const typography = {
     xl: 20,
     xxl: 24,
     xxxl: 32,
+    huge: 40,
   },
   fontWeight: {
+    light: '300' as const,
     regular: '400' as const,
     medium: '500' as const,
     semibold: '600' as const,
     bold: '700' as const,
+    heavy: '800' as const,
   },
   lineHeight: {
     tight: 1.25,
     normal: 1.5,
     relaxed: 1.75,
+    loose: 2,
   },
 };
 
@@ -159,26 +168,85 @@ export const shadows = {
   },
 };
 
+export const gradients = {
+  light: {
+    primary: ['#6366f1', '#4f46e5'],
+    secondary: ['#ec4899', '#db2777'],
+    success: ['#10b981', '#059669'],
+    warning: ['#f59e0b', '#d97706'],
+    error: ['#ef4444', '#dc2626'],
+    purple: ['#8b5cf6', '#7c3aed'],
+    blue: ['#3b82f6', '#2563eb'],
+    // Instagram-style gradients
+    sunset: ['#ff9a9e', '#fad0c4', '#ffecd2'],
+    ocean: ['#667eea', '#764ba2'],
+    neon: ['#f093fb', '#f5576c'],
+  },
+  dark: {
+    primary: ['#818cf8', '#6366f1'],
+    secondary: ['#f472b6', '#ec4899'],
+    success: ['#34d399', '#10b981'],
+    warning: ['#fbbf24', '#f59e0b'],
+    error: ['#f87171', '#ef4444'],
+    purple: ['#a78bfa', '#8b5cf6'],
+    blue: ['#60a5fa', '#3b82f6'],
+    // Instagram-style gradients
+    sunset: ['#ff9a9e', '#fad0c4', '#ffecd2'],
+    ocean: ['#667eea', '#764ba2'],
+    neon: ['#f093fb', '#f5576c'],
+  },
+};
+
+export const animation = {
+  duration: {
+    fast: 150,
+    normal: 250,
+    slow: 350,
+    slower: 500,
+  },
+  easing: {
+    easeIn: 'ease-in',
+    easeOut: 'ease-out',
+    easeInOut: 'ease-in-out',
+    spring: 'spring',
+  },
+};
+
 export const layout = {
   screenPadding: spacing.md,
   cardPadding: spacing.md,
   buttonHeight: 48,
   inputHeight: 48,
+  tabBarHeight: 60,
+  headerHeight: 56,
+  bottomSheetHandleHeight: 20,
   iconSize: {
+    xs: 12,
     sm: 16,
     md: 24,
     lg: 32,
     xl: 48,
+    xxl: 64,
+  },
+  avatarSize: {
+    xs: 24,
+    sm: 32,
+    md: 40,
+    lg: 56,
+    xl: 72,
+    xxl: 96,
   },
 };
 
 // Create a theme object that combines all theme properties
 export const createTheme = (mode: 'light' | 'dark') => ({
   colors: colors[mode],
+  gradients: gradients[mode],
   spacing,
   borderRadius,
   typography,
   shadows,
+  animation,
   layout,
   mode,
 });

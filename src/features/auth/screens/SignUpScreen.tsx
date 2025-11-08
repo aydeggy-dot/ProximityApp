@@ -4,10 +4,8 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -17,6 +15,7 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '../../../types';
 import { validateEmail, validatePassword, validateDisplayName } from '../../../utils/validation';
+import { Button, Input, Toast } from '../../../components/ui';
 
 type SignUpScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'SignUp'>;
 
@@ -32,34 +31,77 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [displayNameError, setDisplayNameError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
 
   const handleSignUp = async () => {
+    // Reset all errors
+    setDisplayNameError('');
+    setEmailError('');
+    setPasswordError('');
+    setConfirmPasswordError('');
+
+    // Validate display name
     if (!validateDisplayName(displayName)) {
-      Alert.alert('Invalid Name', 'Name must be between 2 and 50 characters');
+      setDisplayNameError('Name must be between 2 and 50 characters');
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Name',
+        text2: 'Name must be between 2 and 50 characters',
+      });
       return;
     }
 
+    // Validate email
     if (!validateEmail(email)) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address');
+      setEmailError('Please enter a valid email address');
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Email',
+        text2: 'Please enter a valid email address',
+      });
       return;
     }
 
+    // Validate password
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
-      Alert.alert('Invalid Password', passwordValidation.errors.join('\n'));
+      setPasswordError(passwordValidation.errors[0]);
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Password',
+        text2: passwordValidation.errors.join('\n'),
+      });
       return;
     }
 
+    // Validate password match
     if (password !== confirmPassword) {
-      Alert.alert('Password Mismatch', 'Passwords do not match');
+      setConfirmPasswordError('Passwords do not match');
+      Toast.show({
+        type: 'error',
+        text1: 'Password Mismatch',
+        text2: 'Passwords do not match',
+      });
       return;
     }
 
     try {
       setLoading(true);
       await signUp(email, password, displayName);
+      Toast.show({
+        type: 'success',
+        text1: 'Account Created!',
+        text2: 'Welcome to the community',
+      });
     } catch (error: any) {
-      Alert.alert('Sign Up Failed', error.message);
+      Toast.show({
+        type: 'error',
+        text1: 'Sign Up Failed',
+        text2: error.message || 'An error occurred during sign up',
+      });
     } finally {
       setLoading(false);
     }
@@ -78,55 +120,57 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={styles.subtitle}>Join your groups and find nearby members</Text>
 
           <View style={styles.form}>
-            <TextInput
-              style={styles.input}
-              placeholder="Full Name"
-              placeholderTextColor={theme.colors.textTertiary}
+            <Input
+              label="Full Name"
               value={displayName}
               onChangeText={setDisplayName}
+              leftIcon="account-outline"
+              error={displayNameError}
               editable={!loading}
             />
 
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor={theme.colors.textTertiary}
+            <Input
+              label="Email Address"
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
+              leftIcon="email-outline"
+              error={emailError}
               editable={!loading}
+              style={{ marginTop: 16 }}
             />
 
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor={theme.colors.textTertiary}
+            <Input
+              label="Password"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              leftIcon="lock-outline"
+              error={passwordError}
               editable={!loading}
+              style={{ marginTop: 16 }}
             />
 
-            <TextInput
-              style={styles.input}
-              placeholder="Confirm Password"
-              placeholderTextColor={theme.colors.textTertiary}
+            <Input
+              label="Confirm Password"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
+              leftIcon="lock-check-outline"
+              error={confirmPasswordError}
               editable={!loading}
+              style={{ marginTop: 16 }}
             />
 
-            <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
+            <Button
+              title="Sign Up"
               onPress={handleSignUp}
-              disabled={loading}
-            >
-              <Text style={styles.buttonText}>
-                {loading ? 'Creating Account...' : 'Sign Up'}
-              </Text>
-            </TouchableOpacity>
+              loading={loading}
+              gradient
+              fullWidth
+              style={{ marginTop: 24 }}
+            />
 
             <View style={styles.footer}>
               <Text style={styles.footerText}>Already have an account? </Text>
@@ -173,32 +217,6 @@ const createStyles = (theme: any) =>
     },
     form: {
       width: '100%',
-    },
-    input: {
-      backgroundColor: theme.colors.surface,
-      borderRadius: theme.borderRadius.md,
-      padding: theme.spacing.md,
-      fontSize: theme.typography.fontSize.md,
-      color: theme.colors.text,
-      marginBottom: theme.spacing.md,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-    },
-    button: {
-      backgroundColor: theme.colors.primary,
-      borderRadius: theme.borderRadius.md,
-      padding: theme.spacing.md,
-      alignItems: 'center',
-      marginTop: theme.spacing.md,
-      marginBottom: theme.spacing.md,
-    },
-    buttonDisabled: {
-      opacity: 0.6,
-    },
-    buttonText: {
-      color: '#ffffff',
-      fontSize: theme.typography.fontSize.md,
-      fontWeight: theme.typography.fontWeight.semibold,
     },
     footer: {
       flexDirection: 'row',

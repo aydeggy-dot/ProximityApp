@@ -61,6 +61,7 @@ export const COLLECTIONS = {
   USERS: 'users',
   GROUPS: 'groups',
   GROUP_MEMBERSHIPS: 'groupMemberships',
+  GROUP_INVITATIONS: 'groupInvitations',
   USER_LOCATIONS: 'userLocations',
   PROXIMITY_ALERTS: 'proximityAlerts',
   CHAT_MESSAGES: 'chatMessages',

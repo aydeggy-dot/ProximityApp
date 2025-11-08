@@ -8,6 +8,9 @@ import { StatusBar } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+// Firebase - Import to ensure initialization
+import '@react-native-firebase/app';
+
 // Context Providers
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import { AuthProvider } from './src/contexts/AuthContext';
@@ -15,6 +18,9 @@ import { LocationProvider } from './src/contexts/LocationContext';
 
 // Navigation
 import RootNavigator from './src/navigation/RootNavigator';
+
+// UI Components
+import { Toast, toastConfig } from './src/components/ui';
 
 function App() {
   return (
@@ -25,6 +31,7 @@ function App() {
             <LocationProvider>
               <StatusBar barStyle="light-content" />
               <RootNavigator />
+              <Toast config={toastConfig} />
             </LocationProvider>
           </AuthProvider>
         </ThemeProvider>

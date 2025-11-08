@@ -6,6 +6,8 @@ import { GroupsStackParamList } from '../types';
 import GroupsListScreen from '../features/groups/screens/GroupsListScreen';
 import GroupDetailScreen from '../features/groups/screens/GroupDetailScreen';
 import CreateGroupScreen from '../features/groups/screens/CreateGroupScreen';
+import GroupSettingsScreen from '../features/groups/screens/GroupSettingsScreen';
+import InviteMembersScreen from '../features/groups/screens/InviteMembersScreen';
 
 const Stack = createStackNavigator<GroupsStackParamList>();
 
@@ -30,6 +32,16 @@ const GroupsNavigator: React.FC = () => {
         name="CreateGroup"
         component={CreateGroupScreen}
         options={{ title: 'Create Group' }}
+      />
+      <Stack.Screen
+        name="GroupSettings"
+        component={GroupSettingsScreen}
+        options={{ title: 'Group Settings' }}
+      />
+      <Stack.Screen
+        name="InviteMembers"
+        component={InviteMembersScreen}
+        options={{ title: 'Invite Members' }}
       />
     </Stack.Navigator>
   );

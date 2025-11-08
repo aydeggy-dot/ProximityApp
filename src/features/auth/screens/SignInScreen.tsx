@@ -4,10 +4,8 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -17,6 +15,7 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '../../../types';
 import { validateEmail } from '../../../utils/validation';
+import { Button, Input, Toast } from '../../../components/ui';
 
 type SignInScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'SignIn'>;
 
@@ -30,23 +29,50 @@ const SignInScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const handleSignIn = async () => {
+    // Reset errors
+    setEmailError('');
+    setPasswordError('');
+
+    // Validate email
     if (!validateEmail(email)) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address');
+      setEmailError('Please enter a valid email address');
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Email',
+        text2: 'Please enter a valid email address',
+      });
       return;
     }
 
+    // Validate password
     if (password.length < 6) {
-      Alert.alert('Invalid Password', 'Password must be at least 6 characters');
+      setPasswordError('Password must be at least 6 characters');
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Password',
+        text2: 'Password must be at least 6 characters',
+      });
       return;
     }
 
     try {
       setLoading(true);
       await signIn(email, password);
+      Toast.show({
+        type: 'success',
+        text1: 'Welcome Back!',
+        text2: 'Sign in successful',
+      });
     } catch (error: any) {
-      Alert.alert('Sign In Failed', error.message);
+      Toast.show({
+        type: 'error',
+        text1: 'Sign In Failed',
+        text2: error.message || 'An error occurred during sign in',
+      });
     } finally {
       setLoading(false);
     }
@@ -65,43 +91,44 @@ const SignInScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={styles.subtitle}>Sign in to find nearby group members</Text>
 
           <View style={styles.form}>
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor={theme.colors.textTertiary}
+            <Input
+              label="Email Address"
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
+              leftIcon="email-outline"
+              error={emailError}
               editable={!loading}
             />
 
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor={theme.colors.textTertiary}
+            <Input
+              label="Password"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              leftIcon="lock-outline"
+              error={passwordError}
               editable={!loading}
+              style={{ marginTop: 16 }}
             />
 
             <TouchableOpacity
               onPress={() => navigation.navigate('ForgotPassword')}
               disabled={loading}
+              style={{ marginTop: 8 }}
             >
               <Text style={styles.forgotPassword}>Forgot Password?</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
+            <Button
+              title="Sign In"
               onPress={handleSignIn}
-              disabled={loading}
-            >
-              <Text style={styles.buttonText}>
-                {loading ? 'Signing In...' : 'Sign In'}
-              </Text>
-            </TouchableOpacity>
+              loading={loading}
+              gradient
+              fullWidth
+              style={{ marginTop: 24 }}
+            />
 
             <View style={styles.footer}>
               <Text style={styles.footerText}>Don't have an account? </Text>
@@ -149,36 +176,10 @@ const createStyles = (theme: any) =>
     form: {
       width: '100%',
     },
-    input: {
-      backgroundColor: theme.colors.surface,
-      borderRadius: theme.borderRadius.md,
-      padding: theme.spacing.md,
-      fontSize: theme.typography.fontSize.md,
-      color: theme.colors.text,
-      marginBottom: theme.spacing.md,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-    },
     forgotPassword: {
       color: theme.colors.primary,
       fontSize: theme.typography.fontSize.sm,
       textAlign: 'right',
-      marginBottom: theme.spacing.lg,
-    },
-    button: {
-      backgroundColor: theme.colors.primary,
-      borderRadius: theme.borderRadius.md,
-      padding: theme.spacing.md,
-      alignItems: 'center',
-      marginBottom: theme.spacing.md,
-    },
-    buttonDisabled: {
-      opacity: 0.6,
-    },
-    buttonText: {
-      color: '#ffffff',
-      fontSize: theme.typography.fontSize.md,
-      fontWeight: theme.typography.fontWeight.semibold,
     },
     footer: {
       flexDirection: 'row',
