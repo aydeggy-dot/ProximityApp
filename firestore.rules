@@ -1,0 +1,232 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isMemberOfGroup(groupId) {
+      return exists(/databases/$(database)/documents/groupMemberships/$(request.auth.uid + '_' + groupId));
+    }
+
+    function getMemberRole(groupId) {
+      return get(/databases/$(database)/documents/groupMemberships/$(request.auth.uid + '_' + groupId)).data.role;
+    }
+
+    function isGroupAdmin(groupId) {
+      return isMemberOfGroup(groupId) && getMemberRole(groupId) == 'admin';
+    }
+
+    function isGroupModerator(groupId) {
+      return isMemberOfGroup(groupId) &&
+             (getMemberRole(groupId) == 'admin' || getMemberRole(groupId) == 'moderator');
+    }
+
+    function isGroupCreator(groupId) {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/groups/$(groupId)).data.createdBy == request.auth.uid;
+    }
+
+    // Users collection - users can read all profiles but only write their own
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && isOwner(userId);
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Groups collection
+    match /groups/{groupId} {
+      // Anyone authenticated can read public/invite-only groups
+      allow read: if isAuthenticated() && (
+        resource.data.privacyLevel == 'public' ||
+        resource.data.privacyLevel == 'invite-only' ||
+        isMemberOfGroup(groupId)
+      );
+
+      // Private groups only visible to members
+      allow read: if isAuthenticated() &&
+                     resource.data.privacyLevel == 'private' &&
+                     isMemberOfGroup(groupId);
+
+      // Any authenticated user can create a group
+      allow create: if isAuthenticated() &&
+                       request.resource.data.createdBy == request.auth.uid &&
+                       request.resource.data.memberCount == 0 &&
+                       request.resource.data.isActive == true;
+
+      // Only admin can update group settings
+      allow update: if isAuthenticated() && isGroupAdmin(groupId);
+
+      // Only creator can delete group
+      allow delete: if isAuthenticated() && isGroupCreator(groupId);
+    }
+
+    // Group memberships
+    match /groupMemberships/{membershipId} {
+      // Members can read memberships of groups they belong to
+      allow read: if isAuthenticated() && (
+        membershipId.split('_')[1] == request.auth.uid ||
+        isMemberOfGroup(membershipId.split('_')[1])
+      );
+
+      // Can create membership when joining a group
+      allow create: if isAuthenticated() && (
+        // Self-joining a public group as member
+        (request.resource.data.userId == request.auth.uid &&
+         request.resource.data.role == 'member') ||
+        // Admin adding a new member
+        isGroupAdmin(request.resource.data.groupId)
+      );
+
+      // Only admins can update member roles
+      allow update: if isAuthenticated() &&
+                       isGroupAdmin(request.resource.data.groupId) &&
+                       // Cannot change creator's role
+                       !isGroupCreator(request.resource.data.groupId);
+
+      // Members can remove themselves, admins can remove others
+      allow delete: if isAuthenticated() && (
+        membershipId.split('_')[0] == request.auth.uid ||
+        isGroupAdmin(membershipId.split('_')[1])
+      );
+    }
+
+    // Group invitations
+    match /groupInvitations/{invitationId} {
+      // Users can read their own invitations and group members can see group invitations
+      allow read: if isAuthenticated() && (
+        resource.data.inviteeEmail == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.email ||
+        resource.data.inviteeId == request.auth.uid ||
+        isMemberOfGroup(resource.data.groupId)
+      );
+
+      // Only group admins and moderators can create invitations
+      allow create: if isAuthenticated() &&
+                       isGroupModerator(request.resource.data.groupId) &&
+                       request.resource.data.inviterId == request.auth.uid &&
+                       request.resource.data.status == 'pending';
+
+      // Only invitation recipient can accept/reject
+      allow update: if isAuthenticated() && (
+        // Recipient accepting/rejecting
+        (resource.data.inviteeId == request.auth.uid ||
+         resource.data.inviteeEmail == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.email) &&
+        (request.resource.data.status == 'accepted' ||
+         request.resource.data.status == 'rejected')
+      ) || (
+        // Inviter cancelling
+        resource.data.inviterId == request.auth.uid &&
+        request.resource.data.status == 'cancelled'
+      );
+
+      // Only inviter or group admin can delete
+      allow delete: if isAuthenticated() && (
+        resource.data.inviterId == request.auth.uid ||
+        isGroupAdmin(resource.data.groupId)
+      );
+    }
+
+    // User locations - only for group members
+    match /userLocations/{locationId} {
+      // Can read locations of users in same groups
+      allow read: if isAuthenticated() &&
+                     isMemberOfGroup(resource.data.groupId);
+
+      // Can only write own location
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid &&
+                       isMemberOfGroup(request.resource.data.groupId);
+
+      allow update: if isAuthenticated() &&
+                       resource.data.userId == request.auth.uid;
+
+      allow delete: if isAuthenticated() &&
+                       resource.data.userId == request.auth.uid;
+    }
+
+    // Proximity alerts - users can only read/write their own alerts
+    match /proximityAlerts/{alertId} {
+      allow read: if isAuthenticated() &&
+                     resource.data.userId == request.auth.uid;
+
+      allow create: if isAuthenticated();
+
+      allow update: if isAuthenticated() &&
+                       resource.data.userId == request.auth.uid;
+
+      allow delete: if isAuthenticated() &&
+                       resource.data.userId == request.auth.uid;
+    }
+
+    // Chat messages - only between sender and receiver
+    match /chatMessages/{messageId} {
+      allow read: if isAuthenticated() && (
+        resource.data.senderId == request.auth.uid ||
+        resource.data.receiverId == request.auth.uid
+      );
+
+      allow create: if isAuthenticated() &&
+                       request.resource.data.senderId == request.auth.uid;
+
+      allow update: if isAuthenticated() &&
+                       resource.data.receiverId == request.auth.uid &&
+                       request.resource.data.read == true;
+
+      allow delete: if isAuthenticated() &&
+                       resource.data.senderId == request.auth.uid;
+    }
+
+    // Meet requests
+    match /meetRequests/{requestId} {
+      allow read: if isAuthenticated() && (
+        resource.data.senderId == request.auth.uid ||
+        resource.data.receiverId == request.auth.uid
+      );
+
+      allow create: if isAuthenticated() &&
+                       request.resource.data.senderId == request.auth.uid &&
+                       request.resource.data.status == 'pending' &&
+                       isMemberOfGroup(request.resource.data.groupId);
+
+      allow update: if isAuthenticated() && (
+        resource.data.receiverId == request.auth.uid ||
+        resource.data.senderId == request.auth.uid
+      );
+
+      allow delete: if isAuthenticated() &&
+                       resource.data.senderId == request.auth.uid;
+    }
+
+    // Group events
+    match /groupEvents/{eventId} {
+      // Group members can read events
+      allow read: if isAuthenticated() &&
+                     isMemberOfGroup(resource.data.groupId);
+
+      // Moderators and admins can create events
+      allow create: if isAuthenticated() &&
+                       isGroupModerator(request.resource.data.groupId) &&
+                       request.resource.data.createdBy == request.auth.uid;
+
+      // Event creator or group admin can update
+      allow update: if isAuthenticated() && (
+        resource.data.createdBy == request.auth.uid ||
+        isGroupAdmin(resource.data.groupId)
+      );
+
+      // Event creator or group admin can delete
+      allow delete: if isAuthenticated() && (
+        resource.data.createdBy == request.auth.uid ||
+        isGroupAdmin(resource.data.groupId)
+      );
+    }
+  }
+}
