@@ -301,11 +301,12 @@ export const isUserMemberOfGroup = async (
 
 export const searchGroups = async (searchQuery: string): Promise<Group[]> => {
   try {
-    // Firestore doesn't support full-text search, so we'll get all active groups
+    // Firestore doesn't support full-text search, so we'll get public/invite-only groups
     // and filter client-side for now
     const snapshot = await firestore()
       .collection(COLLECTIONS.GROUPS)
       .where('isActive', '==', true)
+      .where('privacyLevel', 'in', ['public', 'invite-only'])
       .get();
 
     const groups = snapshot.docs.map(doc => {

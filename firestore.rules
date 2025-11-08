@@ -44,17 +44,12 @@ service cloud.firestore {
 
     // Groups collection
     match /groups/{groupId} {
-      // Anyone authenticated can read public/invite-only groups
+      // Anyone authenticated can read public/invite-only groups, members can read their groups
       allow read: if isAuthenticated() && (
         resource.data.privacyLevel == 'public' ||
         resource.data.privacyLevel == 'invite-only' ||
         isMemberOfGroup(groupId)
       );
-
-      // Private groups only visible to members
-      allow read: if isAuthenticated() &&
-                     resource.data.privacyLevel == 'private' &&
-                     isMemberOfGroup(groupId);
 
       // Any authenticated user can create a group
       allow create: if isAuthenticated() &&
