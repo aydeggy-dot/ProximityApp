@@ -73,7 +73,7 @@ service cloud.firestore {
     match /groupMemberships/{membershipId} {
       // Members can read memberships of groups they belong to
       allow read: if isAuthenticated() && (
-        membershipId.split('_')[1] == request.auth.uid ||
+        membershipId.split('_')[0] == request.auth.uid ||
         isMemberOfGroup(membershipId.split('_')[1])
       );
 
