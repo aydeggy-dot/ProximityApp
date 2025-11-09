@@ -93,6 +93,16 @@ export interface PrivacySettings {
   autoStopBroadcastingAfter?: number; // Hours
 }
 
+/**
+ * Alert style for proximity notifications
+ */
+export enum AlertStyle {
+  SILENT = 'silent',           // No sound or vibration
+  VIBRATION = 'vibration',     // Vibration only
+  SOUND = 'sound',             // Sound only
+  BOTH = 'both',               // Sound and vibration
+}
+
 export interface NotificationPreferences {
   enableProximityAlerts: boolean;
   enableGroupInvites: boolean;
@@ -103,6 +113,7 @@ export interface NotificationPreferences {
   quietHoursEnd?: string; // 24h format, e.g., "08:00"
   soundEnabled: boolean;
   vibrationEnabled: boolean;
+  alertStyle: AlertStyle; // Alert notification style
 }
 
 export interface ChatMessage {
@@ -172,9 +183,11 @@ export type GroupsStackParamList = {
   GroupsList: undefined;
   GroupDetail: { groupId: string };
   CreateGroup: undefined;
-  JoinGroup: undefined;
-  GroupSettings: { groupId: string };
-  InviteMembers: { groupId: string };
+};
+
+export type ProfileStackParamList = {
+  ProfileView: undefined;
+  Settings: undefined;
 };
 
 // Utility types

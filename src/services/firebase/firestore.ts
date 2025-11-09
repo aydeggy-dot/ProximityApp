@@ -186,18 +186,29 @@ export const getGroup = async (groupId: string): Promise<Group | null> => {
 
 export const getUserGroups = async (userId: string): Promise<Group[]> => {
   try {
+    console.log('=== GET USER GROUPS DEBUG ===');
+    console.log('Fetching groups for user:', userId);
+
     // Get user's group memberships
     const memberships = await queryDocuments<GroupMembership>(
       COLLECTIONS.GROUP_MEMBERSHIPS,
       [{ field: 'userId', operator: '==', value: userId }]
     );
 
+    console.log('Found memberships:', memberships.length);
+    console.log('Membership details:', JSON.stringify(memberships, null, 2));
+
     // Get group details for each membership
     const groupPromises = memberships.map(membership =>
       getGroup(membership.groupId)
     );
     const groups = await Promise.all(groupPromises);
-    return groups.filter(g => g !== null) as Group[];
+    const filteredGroups = groups.filter(g => g !== null) as Group[];
+
+    console.log('Found groups:', filteredGroups.length);
+    console.log('Group IDs:', filteredGroups.map(g => g.id));
+
+    return filteredGroups;
   } catch (error) {
     console.error('Error getting user groups:', error);
     throw error;
@@ -229,6 +240,24 @@ export const getGroupMembers = async (groupId: string): Promise<Array<GroupMembe
   }
 };
 
+/**
+ * Get all group memberships for a specific user
+ * @param userId - ID of the user
+ * @returns Array of group memberships for the user
+ */
+export const getGroupMemberships = async (userId: string): Promise<GroupMembership[]> => {
+  try {
+    const memberships = await queryDocuments<GroupMembership>(
+      COLLECTIONS.GROUP_MEMBERSHIPS,
+      [{ field: 'userId', operator: '==', value: userId }]
+    );
+    return memberships;
+  } catch (error) {
+    console.error('Error getting group memberships:', error);
+    throw error;
+  }
+};
+
 // Group Membership operations
 
 export const addGroupMember = async (
@@ -236,6 +265,9 @@ export const addGroupMember = async (
   groupId: string,
   role: 'admin' | 'moderator' | 'member' = 'member'
 ): Promise<void> => {
+  console.log('=== ADD GROUP MEMBER DEBUG ===');
+  console.log('Adding member to group:', { userId, groupId, role });
+
   const membershipData: Partial<GroupMembership> = {
     userId,
     groupId,
@@ -246,7 +278,11 @@ export const addGroupMember = async (
   };
 
   const membershipId = `${userId}_${groupId}`;
+  console.log('Membership ID:', membershipId);
+  console.log('Membership data:', JSON.stringify(membershipData, null, 2));
+
   await setDocument(COLLECTIONS.GROUP_MEMBERSHIPS, membershipId, membershipData);
+  console.log('Membership document created successfully');
 
   // Increment member count
   await firestore()
@@ -255,6 +291,7 @@ export const addGroupMember = async (
     .update({
       memberCount: firestore.FieldValue.increment(1),
     });
+  console.log('Member count incremented successfully');
 };
 
 export const removeGroupMember = async (
@@ -779,4 +816,91 @@ export const subscribeToNearbyUsers = (
         callback([]);
       }
     );
+};
+
+// Proximity Alert operations
+
+/**
+ * Create a proximity alert
+ * @param alertData - Proximity alert data
+ * @returns Created alert ID
+ */
+export const createProximityAlert = async (
+  alertData: Omit<ProximityAlert, 'id'>
+): Promise<string> => {
+  try {
+    const docId = await createDocument(COLLECTIONS.PROXIMITY_ALERTS, alertData);
+    return docId;
+  } catch (error) {
+    console.error('Error creating proximity alert:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get proximity alerts for a user
+ * @param userId - ID of the user
+ * @param limit - Optional limit on number of alerts
+ * @returns Array of proximity alerts
+ */
+export const getProximityAlerts = async (
+  userId: string,
+  limit?: number
+): Promise<ProximityAlert[]> => {
+  try {
+    const alerts = await queryDocuments<ProximityAlert>(
+      COLLECTIONS.PROXIMITY_ALERTS,
+      [{ field: 'userId', operator: '==', value: userId }]
+    );
+    // Sort by timestamp descending (newest first)
+    const sorted = alerts.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    return limit ? sorted.slice(0, limit) : sorted;
+  } catch (error) {
+    console.error('Error getting proximity alerts:', error);
+    throw error;
+  }
+};
+
+/**
+ * Subscribe to proximity alerts for a user
+ * @param userId - ID of the user
+ * @param callback - Callback function for alert updates
+ * @returns Unsubscribe function
+ */
+export const subscribeToProximityAlerts = (
+  userId: string,
+  callback: (alerts: ProximityAlert[]) => void
+): (() => void) => {
+  return firestore()
+    .collection(COLLECTIONS.PROXIMITY_ALERTS)
+    .where('userId', '==', userId)
+    .orderBy('timestamp', 'desc')
+    .onSnapshot(
+      snapshot => {
+        const alerts = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as ProximityAlert[];
+        callback(alerts);
+      },
+      error => {
+        console.error('Error subscribing to proximity alerts:', error);
+        callback([]);
+      }
+    );
+};
+
+/**
+ * Mark proximity alert as acknowledged
+ * @param alertId - ID of the alert
+ */
+export const acknowledgeProximityAlert = async (alertId: string): Promise<void> => {
+  try {
+    await updateDocument(COLLECTIONS.PROXIMITY_ALERTS, alertId, {
+      acknowledged: true,
+    });
+  } catch (error) {
+    console.error('Error acknowledging proximity alert:', error);
+    throw error;
+  }
 };

@@ -9,13 +9,19 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { ProfileStackParamList } from '../../../types';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
+type ProfileScreenNavigationProp = StackNavigationProp<ProfileStackParamList, 'ProfileView'>;
+
 const ProfileScreen: React.FC = () => {
   const { theme, themeMode, setThemeMode } = useTheme();
   const { user, userProfile, signOut } = useAuth();
+  const navigation = useNavigation<ProfileScreenNavigationProp>();
 
   const handleSignOut = async () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -74,7 +80,10 @@ const ProfileScreen: React.FC = () => {
           <Text style={styles.settingValue}>100m</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.settingItem}>
+        <TouchableOpacity
+          style={styles.settingItem}
+          onPress={() => navigation.navigate('Settings')}
+        >
           <View style={styles.settingLeft}>
             <Icon name="bell" size={24} color={theme.colors.text} />
             <Text style={styles.settingText}>Notifications</Text>

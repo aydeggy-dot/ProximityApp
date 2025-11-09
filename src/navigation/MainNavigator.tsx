@@ -9,8 +9,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 // Import screen navigators
 import MapNavigator from './MapNavigator';
 import GroupsNavigator from './GroupsNavigator';
+import ProfileNavigator from './ProfileNavigator';
 import NotificationsScreen from '../features/notifications/screens/NotificationsScreen';
-import ProfileScreen from '../features/profile/screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -68,7 +68,7 @@ const MainNavigator: React.FC = () => {
       />
       <Tab.Screen
         name="Profile"
-        component={ProfileScreen}
+        component={ProfileNavigator}
         options={{
           tabBarLabel: 'Profile',
           tabBarIcon: ({ color, size }) => (

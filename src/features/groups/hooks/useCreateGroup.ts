@@ -35,15 +35,23 @@ export const useCreateGroup = (): UseCreateGroupResult => {
         setCreating(true);
         setError(null);
 
+        // Debug: Check auth state
+        console.log('=== CREATE GROUP DEBUG ===');
+        console.log('User authenticated:', !!user);
+        console.log('User ID:', user?.uid);
+
         const groupData: Omit<Group, 'id'> = {
           name: name.trim(),
           description: description?.trim(),
           createdBy: user.uid,
           createdAt: new Date(),
-          memberCount: 1,
+          memberCount: 0,
           isActive: true,
           privacyLevel,
         };
+
+        // Debug: Log data being sent
+        console.log('Group data to create:', JSON.stringify(groupData, null, 2));
 
         // Create the group
         const groupId = await createGroup(groupData);

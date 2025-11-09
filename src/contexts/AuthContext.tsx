@@ -15,6 +15,7 @@ import {
   getUserProfile,
   updateUserProfile as firestoreUpdateUserProfile,
 } from '../services/firebase/firestore';
+import PushNotificationService from '../services/PushNotificationService';
 import { UserProfile } from '../types';
 
 interface AuthContextType {
@@ -57,6 +58,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
           const profile = await getUserProfile(firebaseUser.uid);
           setUserProfile(profile);
+
+          // Initialize push notifications
+          await PushNotificationService.initialize(firebaseUser.uid);
         } catch (error) {
           console.error('Error loading user profile:', error);
         }
@@ -122,6 +126,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = async () => {
     try {
       setLoading(true);
+
+      // Unregister FCM token before signing out
+      if (user) {
+        await PushNotificationService.unregister(user.uid);
+      }
+
       await firebaseSignOut();
     } catch (error) {
       throw error;
