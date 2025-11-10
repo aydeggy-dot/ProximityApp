@@ -316,7 +316,8 @@ export const updateGroupMembership = async (
   updates: Partial<GroupMembership>
 ): Promise<void> => {
   const membershipId = `${userId}_${groupId}`;
-  await updateDocument(COLLECTIONS.GROUP_MEMBERSHIPS, membershipId, updates);
+  // Use set with merge instead of update to handle case where document doesn't exist yet
+  await setDocument(COLLECTIONS.GROUP_MEMBERSHIPS, membershipId, updates, true);
 };
 
 export const isUserMemberOfGroup = async (

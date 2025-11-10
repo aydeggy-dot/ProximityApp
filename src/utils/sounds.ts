@@ -1,15 +1,12 @@
 /**
  * Sound Alert Utility
  *
- * Provides sound feedback for proximity alerts using the device's notification sounds.
- * Works with react-native-sound to play system notification sounds.
+ * Provides sound feedback for proximity alerts using notifee.
+ * Compatible with React Native New Architecture.
  */
 
-import Sound from 'react-native-sound';
+import notifee, { AndroidImportance } from '@notifee/react-native';
 import { Platform } from 'react-native';
-
-// Enable playback in silence mode (iOS)
-Sound.setCategory('Playback');
 
 /**
  * Sound types for different alert scenarios
@@ -20,123 +17,50 @@ export enum SoundType {
   WARNING = 'warning',
 }
 
-// Cache for preloaded sounds
-const soundCache: { [key: string]: Sound | null } = {};
-
 /**
- * Preload a system sound
- */
-const preloadSound = (soundType: SoundType): Promise<Sound | null> => {
-  return new Promise((resolve) => {
-    // Check cache first
-    if (soundCache[soundType]) {
-      resolve(soundCache[soundType]);
-      return;
-    }
-
-    try {
-      let sound: Sound;
-
-      if (Platform.OS === 'android') {
-        // Use Android system notification sounds
-        // These are built-in and don't require bundling
-        const soundMap: { [key in SoundType]: string } = {
-          [SoundType.NOTIFICATION]: 'notification.mp3',
-          [SoundType.ALERT]: 'alert.mp3',
-          [SoundType.WARNING]: 'warning.mp3',
-        };
-
-        // Android: Try to use bundled sound from android/app/src/main/res/raw/
-        // If not found, fallback to system default
-        sound = new Sound(soundMap[soundType], Sound.MAIN_BUNDLE, (error) => {
-          if (error) {
-            console.log('Failed to load bundled sound, using system default:', error);
-            // Fallback to system notification sound
-            sound = new Sound('content://settings/system/notification_sound', '', (error) => {
-              if (error) {
-                console.error('Failed to load system sound:', error);
-                soundCache[soundType] = null;
-                resolve(null);
-              } else {
-                soundCache[soundType] = sound;
-                resolve(sound);
-              }
-            });
-          } else {
-            soundCache[soundType] = sound;
-            resolve(sound);
-          }
-        });
-      } else {
-        // iOS: Use system sounds
-        const soundMap: { [key in SoundType]: string } = {
-          [SoundType.NOTIFICATION]: '1315', // SMS received (Tri-tone)
-          [SoundType.ALERT]: '1005',        // New mail
-          [SoundType.WARNING]: '1006',      // Sent mail
-        };
-
-        sound = new Sound(soundMap[soundType], Sound.MAIN_BUNDLE, (error) => {
-          if (error) {
-            console.error('Failed to load iOS system sound:', error);
-            soundCache[soundType] = null;
-            resolve(null);
-          } else {
-            soundCache[soundType] = sound;
-            resolve(sound);
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error preloading sound:', error);
-      resolve(null);
-    }
-  });
-};
-
-/**
- * Play a sound
+ * Play a sound using notifee
+ * This approach is compatible with React Native New Architecture
  */
 const playSound = async (soundType: SoundType, volume: number = 1.0): Promise<void> => {
   try {
-    // Get or load the sound
-    let sound = soundCache[soundType];
+    // Create a channel ID for this sound type
+    const channelId = `sound-${soundType}`;
 
-    if (!sound) {
-      sound = await preloadSound(soundType);
-    }
-
-    if (!sound) {
-      console.warn(`Sound ${soundType} not available`);
-      return;
-    }
-
-    // Set volume (0.0 to 1.0)
-    sound.setVolume(Math.max(0, Math.min(1, volume)));
-
-    // Play the sound
-    sound.play((success) => {
-      if (!success) {
-        console.error('Failed to play sound');
-        // Reset the sound for next play
-        sound?.reset();
-      }
+    // Ensure the channel exists
+    await notifee.createChannel({
+      id: channelId,
+      name: `${soundType} sounds`,
+      importance: AndroidImportance.HIGH,
+      sound: 'default', // Use default notification sound
     });
+
+    // Display a notification with sound
+    // The notification is immediately cancelled so only the sound plays
+    const notificationId = await notifee.displayNotification({
+      title: '', // Empty title
+      body: '', // Empty body
+      android: {
+        channelId,
+        importance: AndroidImportance.HIGH,
+        sound: 'default',
+        // Make notification invisible by using minimal UI
+        smallIcon: 'ic_launcher',
+        color: '#00000000', // Transparent
+        showTimestamp: false,
+        autoCancel: true,
+      },
+      ios: {
+        sound: 'default',
+      },
+    });
+
+    // Immediately cancel the notification so only sound plays
+    setTimeout(() => {
+      notifee.cancelNotification(notificationId);
+    }, 100);
   } catch (error) {
     console.error('Error playing sound:', error);
   }
-};
-
-/**
- * Release all cached sounds to free memory
- */
-const releaseAllSounds = (): void => {
-  Object.keys(soundCache).forEach((key) => {
-    const sound = soundCache[key];
-    if (sound) {
-      sound.release();
-      soundCache[key] = null;
-    }
-  });
 };
 
 /**
@@ -166,19 +90,37 @@ export const sounds = {
 
   /**
    * Preload all sounds for better performance
+   * (No-op in this implementation as notifee handles sound on-demand)
    */
   preloadAll: async () => {
+    // Create all channels upfront
     await Promise.all([
-      preloadSound(SoundType.NOTIFICATION),
-      preloadSound(SoundType.ALERT),
-      preloadSound(SoundType.WARNING),
+      notifee.createChannel({
+        id: 'sound-notification',
+        name: 'Notification sounds',
+        importance: AndroidImportance.HIGH,
+        sound: 'default',
+      }),
+      notifee.createChannel({
+        id: 'sound-alert',
+        name: 'Alert sounds',
+        importance: AndroidImportance.HIGH,
+        sound: 'default',
+      }),
+      notifee.createChannel({
+        id: 'sound-warning',
+        name: 'Warning sounds',
+        importance: AndroidImportance.HIGH,
+        sound: 'default',
+      }),
     ]);
   },
 
   /**
    * Release all sounds to free memory
+   * (No-op in this implementation as notifee manages resources automatically)
    */
   releaseAll: () => {
-    releaseAllSounds();
+    // Nothing to release - notifee manages its own resources
   },
 };

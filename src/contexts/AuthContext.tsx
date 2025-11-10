@@ -44,33 +44,46 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  console.log('[AUTHCONTEXT] AuthProvider component initializing...');
+
   const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('[AUTHCONTEXT] useEffect running - subscribing to auth state changes...');
+
     // Subscribe to auth state changes
     const unsubscribe = onAuthStateChanged(async (firebaseUser) => {
+      console.log('[AUTHCONTEXT] onAuthStateChanged triggered. User:', firebaseUser ? firebaseUser.uid : 'null');
+
       setUser(firebaseUser);
 
       if (firebaseUser) {
         // Load user profile from Firestore
         try {
+          console.log('[AUTHCONTEXT] Loading user profile from Firestore...');
           const profile = await getUserProfile(firebaseUser.uid);
+          console.log('[AUTHCONTEXT] User profile loaded successfully');
           setUserProfile(profile);
 
           // Initialize push notifications
+          console.log('[AUTHCONTEXT] Initializing push notifications...');
           await PushNotificationService.initialize(firebaseUser.uid);
+          console.log('[AUTHCONTEXT] Push notifications initialized successfully');
         } catch (error) {
-          console.error('Error loading user profile:', error);
+          console.error('[AUTHCONTEXT] Error loading user profile or initializing notifications:', error);
         }
       } else {
+        console.log('[AUTHCONTEXT] No user logged in, clearing profile');
         setUserProfile(null);
       }
 
+      console.log('[AUTHCONTEXT] Setting loading to false');
       setLoading(false);
     });
 
+    console.log('[AUTHCONTEXT] Auth state subscription established');
     return unsubscribe;
   }, []);
 
@@ -174,5 +187,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     updateProfile,
   };
 
+  console.log('[AUTHCONTEXT] Rendering AuthContext.Provider. Loading:', loading, 'User:', user ? 'present' : 'null');
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

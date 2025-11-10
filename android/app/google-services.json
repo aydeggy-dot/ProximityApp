@@ -29,6 +29,13 @@
             {
               "client_id": "257975647647-40t7v8kpfi7sd5rke0tr03omr6ig55tg.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "257975647647-8lftchfvi0bjb4qrfdjpmlcp87dl8qjk.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "org.reactjs.native.example.ProximityApp"
+              }
             }
           ]
         }

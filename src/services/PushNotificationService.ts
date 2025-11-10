@@ -41,13 +41,14 @@ export const registerFCMToken = async (userId: string): Promise<string | null> =
     console.log('FCM Token:', token);
 
     // Save token to Firestore for server-side push
-    await firestore().collection('users').doc(userId).update({
+    await firestore().collection('users').doc(userId).set({
       fcmTokens: firestore.FieldValue.arrayUnion({
         token,
         platform: Platform.OS,
-        addedAt: firestore.FieldValue.serverTimestamp(),
+        addedAt: Date.now(),
       }),
-    });
+      lastTokenUpdate: firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
 
     return token;
   } catch (error) {

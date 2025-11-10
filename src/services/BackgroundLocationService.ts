@@ -9,7 +9,7 @@ import notifee, { AndroidImportance, AndroidStyle } from '@notifee/react-native'
 import firestore from '@react-native-firebase/firestore';
 import { Platform, PermissionsAndroid } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { calculateDistance } from '../utils/geolocation';
+import { calculateDistance } from '../utils/distance';
 import { sounds } from '../utils/sounds';
 import { haptics } from '../utils/haptics';
 import { AlertStyle } from '../types';

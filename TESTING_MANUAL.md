@@ -173,6 +173,45 @@ This React Native proximity-based app enables users to find nearby group members
 - [ ] Test refreshLocation() method
 - [ ] Verify locationError displayed when appropriate
 
+### 2.4 Background Location Tracking ✨ NEW
+
+#### Service Initialization
+- [ ] Sign in to app
+- [ ] Verify background location service starts automatically
+- [ ] Check device location settings (Allow all the time)
+- [ ] Verify foreground service notification (Android)
+- [ ] Verify background permission granted
+
+#### Background Updates
+- [ ] Send app to background
+- [ ] Wait 15 minutes
+- [ ] Open Firestore console
+- [ ] Verify location document updated with timestamp
+- [ ] Verify accuracy and coordinates recorded
+- [ ] Verify isActive flag is true
+
+#### Proximity Detection in Background
+- [ ] Have two users in same group
+- [ ] Both grant background location permission
+- [ ] Send both apps to background
+- [ ] Move User A within User B's proximity radius
+- [ ] Wait up to 15 minutes
+- [ ] Verify proximity alert triggered
+- [ ] Verify notification received on both devices
+
+#### Background Service Lifecycle
+- [ ] Sign in - verify service starts
+- [ ] Sign out - verify service stops
+- [ ] Force kill app - verify service restarts (Android)
+- [ ] Airplane mode - verify service handles gracefully
+- [ ] Battery saver mode - verify service continues (may be throttled)
+
+#### Battery Optimization
+- [ ] Monitor battery usage over 1 hour
+- [ ] Verify reasonable battery consumption (<5% per hour)
+- [ ] Test with screen off
+- [ ] Test with device locked
+
 ---
 
 ## 3. MAP SCREEN
@@ -324,23 +363,77 @@ Note: Full implementation pending
 - [ ] Verify notification items show group name
 - [ ] Test notification item tap interaction
 
-### 5.2 Push Notifications (Firebase Cloud Messaging)
-Note: Test when FCM is fully integrated
+### 5.2 Push Notifications ✨ ENHANCED
 
-#### Permission Request
-- [ ] Test notification permission dialog
-- [ ] Grant permission - verify FCM token generated
-- [ ] Deny permission - verify appropriate handling
+#### FCM Setup & Initialization
+- [ ] Install app fresh
+- [ ] Grant notification permission
+- [ ] Verify FCM token generated (check logs)
+- [ ] Verify token stored in Firestore user profile
+- [ ] Verify Notifee channels created (Android)
 
-#### Receiving Notifications
+#### Foreground Notifications
+- [ ] With app open and active
+- [ ] Trigger proximity alert from another user
+- [ ] Verify notification appears at top of screen
+- [ ] Verify correct icon displayed
+- [ ] Verify notification title and message accurate
+- [ ] Verify notification sound plays (if enabled in settings)
+- [ ] Verify haptic feedback occurs
+- [ ] Tap notification - verify navigation to map
+
+#### Background Notifications
+- [ ] Send app to background (home button)
 - [ ] Trigger proximity alert
-- [ ] Verify notification received (foreground)
-- [ ] Verify notification received (background)
-- [ ] Verify notification received (app closed)
-- [ ] Verify notification content accurate
-- [ ] Verify notification sound (if enabled)
-- [ ] Verify notification vibration (if enabled)
-- [ ] Tap notification - verify app opens to correct screen
+- [ ] Verify notification appears in system tray
+- [ ] Verify notification badge on app icon
+- [ ] Verify sound plays based on alert style setting
+- [ ] Verify vibration based on alert style setting
+- [ ] Tap notification - verify app opens to map
+
+#### Notifications When App Closed
+- [ ] Force close app completely
+- [ ] Trigger proximity alert from another device
+- [ ] Verify notification appears
+- [ ] Verify notification persists in notification drawer
+- [ ] Tap notification - verify app launches to map screen
+- [ ] Verify notification data payload received
+
+#### Notification Channels (Android)
+- [ ] Long-press notification
+- [ ] Tap settings/configure
+- [ ] Verify "Proximity Alerts" channel exists
+- [ ] Verify "Background Service" channel exists
+- [ ] Verify "Meet Requests" channel exists
+- [ ] Test changing channel settings
+- [ ] Verify app respects channel settings
+
+#### Notification Types
+- [ ] Test proximity alert notification
+- [ ] Test meet request received notification
+- [ ] Test meet request accepted notification
+- [ ] Test meet request declined notification
+- [ ] Verify each has appropriate icon
+- [ ] Verify each has appropriate action buttons (if applicable)
+
+#### Quiet Hours Feature
+- [ ] Go to Settings screen
+- [ ] Enable quiet hours (e.g., 10 PM - 7 AM)
+- [ ] Save settings
+- [ ] Trigger alert during quiet hours
+- [ ] Verify notification suppressed or silent
+- [ ] Trigger alert outside quiet hours
+- [ ] Verify normal notification behavior
+
+#### Alert Style Settings
+- [ ] Set alert style to "Silent"
+- [ ] Trigger notification - verify no sound/vibration
+- [ ] Set alert style to "Vibration"
+- [ ] Trigger notification - verify vibration only
+- [ ] Set alert style to "Sound"
+- [ ] Trigger notification - verify sound only
+- [ ] Set alert style to "Both"
+- [ ] Trigger notification - verify sound + vibration
 
 ---
 
@@ -386,7 +479,96 @@ Note: Test when FCM is fully integrated
 - [ ] Click setting (placeholder)
 - [ ] Verify future navigation to privacy settings
 
-### 6.3 Sign Out
+### 6.3 Settings Screen ✨ NEW
+
+#### Navigation
+- [ ] Navigate to Profile tab
+- [ ] Verify "Settings" option visible
+- [ ] Tap Settings
+- [ ] Verify navigation to Settings screen
+- [ ] Verify back button returns to Profile
+
+#### Alert Style Setting
+- [ ] Verify "Alert Style" section visible
+- [ ] Verify current selection highlighted
+- [ ] Tap "Silent" option
+- [ ] Verify selection updates with animation
+- [ ] Verify haptic feedback on selection
+- [ ] Tap "Vibration" option
+- [ ] Verify selection updates
+- [ ] Tap "Sound" option
+- [ ] Verify selection updates
+- [ ] Tap "Both" option
+- [ ] Verify selection updates
+
+#### Proximity Radius Slider
+- [ ] Verify "Proximity Radius" section visible
+- [ ] Verify current value displayed (e.g., "100 m")
+- [ ] Drag slider to minimum (50m)
+- [ ] Verify value updates in real-time
+- [ ] Drag slider to maximum (500m)
+- [ ] Verify value updates
+- [ ] Set to intermediate value (250m)
+- [ ] Verify smooth slider animation
+- [ ] Verify haptic feedback on drag
+
+#### Quiet Hours Configuration
+- [ ] Verify "Quiet Hours" section visible
+- [ ] Toggle "Enable Quiet Hours" switch
+- [ ] Verify switch animates smoothly
+- [ ] Verify haptic feedback on toggle
+- [ ] Tap "Start Time" (e.g., 10:00 PM)
+- [ ] Verify time picker modal appears
+- [ ] Select different time
+- [ ] Verify time updates in UI
+- [ ] Tap "End Time" (e.g., 7:00 AM)
+- [ ] Verify time picker modal appears
+- [ ] Select different time
+- [ ] Verify time updates in UI
+- [ ] Disable quiet hours
+- [ ] Verify time pickers become disabled
+
+#### Notification Preferences
+- [ ] Verify "Notification Preferences" section
+- [ ] Toggle "Proximity Alerts" switch
+- [ ] Verify toggle works with animation
+- [ ] Verify haptic feedback
+- [ ] Toggle "Meet Requests" switch
+- [ ] Verify toggle works
+- [ ] Toggle "Group Updates" switch
+- [ ] Verify toggle works
+- [ ] Toggle "System Notifications" switch
+- [ ] Verify toggle works
+
+#### Saving Settings
+- [ ] Make multiple changes to settings
+- [ ] Tap "Save Settings" button
+- [ ] Verify loading state shows on button
+- [ ] Verify success toast appears: "Settings saved successfully"
+- [ ] Navigate back to Profile
+- [ ] Return to Settings
+- [ ] Verify all settings persisted correctly
+- [ ] Close app completely
+- [ ] Reopen app and check Settings
+- [ ] Verify settings still persisted
+
+#### Settings Validation
+- [ ] Try to enable quiet hours with end time before start time
+- [ ] Verify validation message or auto-correction
+- [ ] Set proximity radius to minimum and maximum
+- [ ] Verify values stay within bounds
+- [ ] Test rapid toggling of switches
+- [ ] Verify UI remains stable
+
+#### Firestore Persistence
+- [ ] Change settings and save
+- [ ] Open Firestore console
+- [ ] Navigate to users/{userId}
+- [ ] Verify settings object updated
+- [ ] Verify alertStyle, proximityRadius, quietHours saved
+- [ ] Verify notificationPreferences object updated
+
+### 6.4 Sign Out
 
 #### Happy Path
 - [ ] Click "Sign Out" button
@@ -410,7 +592,417 @@ Note: Test when FCM is fully integrated
 
 ---
 
-## 7. NAVIGATION & ROUTING
+## 7. MEET-UP REQUEST FUNCTIONALITY ✨ NEW
+
+### 7.1 Send Meet Request
+
+#### UI Elements
+- [ ] Navigate to Map screen
+- [ ] See nearby member marker
+- [ ] Tap member marker
+- [ ] Verify marker callout appears
+- [ ] Verify "Meet Up" button visible in callout
+- [ ] Verify distance displayed accurately
+- [ ] Tap "Meet Up" button
+- [ ] Verify MeetRequestModal opens
+
+#### Modal Display (Send Mode)
+- [ ] Verify modal title "Send Meet Request"
+- [ ] Verify recipient name displayed
+- [ ] Verify distance displayed (e.g., "150m away")
+- [ ] Verify distance icon visible
+- [ ] Verify optional message input field
+- [ ] Verify placeholder text "Add a message (optional)"
+- [ ] Verify "Cancel" button
+- [ ] Verify "Send Request" button
+- [ ] Verify close (X) button
+
+#### Sending Request
+- [ ] Enter optional message (up to 200 chars)
+- [ ] Tap "Send Request" button
+- [ ] Verify loading indicator shows
+- [ ] Verify button disabled during loading
+- [ ] Verify success - modal closes
+- [ ] Verify success toast notification
+- [ ] Verify request appears in sent requests list
+- [ ] Verify can't send duplicate request to same user
+
+#### Message Input
+- [ ] Test with no message - verify sends successfully
+- [ ] Test with short message (10 chars)
+- [ ] Test with maximum length (200 chars)
+- [ ] Verify character counter (if implemented)
+- [ ] Test with special characters
+- [ ] Test with emoji
+- [ ] Test multiline message
+- [ ] Tap outside modal - verify closes
+
+### 7.2 Receive Meet Request
+
+#### Notification
+- [ ] Have another user send you a meet request
+- [ ] Verify notification received immediately
+- [ ] Verify notification shows sender name
+- [ ] Verify notification shows distance
+- [ ] Tap notification - verify modal opens
+
+#### Modal Display (View Mode)
+- [ ] Verify modal title "Meet Request"
+- [ ] Verify sender name displayed prominently
+- [ ] Verify message displayed (if included)
+- [ ] Verify message icon and styling
+- [ ] Verify distance displayed
+- [ ] Verify "Decline" button (outlined, red)
+- [ ] Verify "Accept" button (filled, green)
+- [ ] Verify close (X) button
+
+#### Accepting Request
+- [ ] Tap "Accept" button
+- [ ] Verify loading indicator shows
+- [ ] Verify button disabled during loading
+- [ ] Verify success - modal closes
+- [ ] Verify success toast: "Meet request accepted"
+- [ ] Verify request status updated to "accepted"
+- [ ] Verify sender receives notification
+- [ ] Verify request removed from pending list
+
+#### Declining Request
+- [ ] Receive new meet request
+- [ ] Open request modal
+- [ ] Tap "Decline" button
+- [ ] Verify loading indicator shows
+- [ ] Verify modal closes
+- [ ] Verify toast: "Meet request declined"
+- [ ] Verify request status updated to "declined"
+- [ ] Verify sender receives notification
+- [ ] Verify request removed from pending list
+
+### 7.3 Meet Request Management
+
+#### Sent Requests List
+- [ ] Navigate to sent requests (if accessible)
+- [ ] Verify list of sent requests
+- [ ] Verify each shows:
+  - Recipient name
+  - Status (pending/accepted/declined)
+  - Timestamp
+  - Distance (if available)
+- [ ] Test canceling pending request
+- [ ] Verify request removed from list
+
+#### Received Requests List
+- [ ] Navigate to received requests
+- [ ] Verify list of received requests
+- [ ] Verify pending requests highlighted
+- [ ] Verify badge count on tab (if applicable)
+- [ ] Test viewing request details
+- [ ] Test accepting from list
+- [ ] Test declining from list
+- [ ] Verify list updates in real-time
+
+#### Real-time Updates
+- [ ] Have two devices logged in (User A, User B)
+- [ ] User A sends request to User B
+- [ ] Verify User A sees "pending" status immediately
+- [ ] Verify User B receives notification immediately
+- [ ] User B accepts request
+- [ ] Verify User A sees "accepted" status update in real-time
+- [ ] Verify no page refresh needed
+
+#### Request Expiration
+- [ ] Send meet request
+- [ ] Wait 2 hours
+- [ ] Verify request status changes to "expired"
+- [ ] Verify expired requests auto-removed
+- [ ] Test cleanup function manually (if available)
+
+#### Edge Cases
+- [ ] Try sending request to offline user
+- [ ] Try sending request to user not in group
+- [ ] Test with poor network connection
+- [ ] Test rapid send/cancel actions
+- [ ] Test receiving multiple requests simultaneously
+- [ ] Verify proper error handling
+
+### 7.4 Meet Request Notifications
+
+#### Push Notifications
+- [ ] Close app completely
+- [ ] Have another user send meet request
+- [ ] Verify FCM notification received
+- [ ] Verify notification title accurate
+- [ ] Verify notification body includes sender name
+- [ ] Tap notification - verify app opens to request
+
+#### In-App Notifications
+- [ ] With app open
+- [ ] Receive meet request
+- [ ] Verify toast/banner notification appears
+- [ ] Verify notification auto-dismisses
+- [ ] Verify can dismiss manually
+
+#### Notification Sounds
+- [ ] Ensure alert style set to "Sound" or "Both"
+- [ ] Receive meet request
+- [ ] Verify custom sound plays
+- [ ] Verify sound different from proximity alerts
+- [ ] Test with alert style "Silent"
+- [ ] Verify no sound plays
+
+---
+
+## 8. MAP ENHANCEMENTS ✨ NEW
+
+### 8.1 ETA Calculation
+
+#### Display
+- [ ] Navigate to Map screen
+- [ ] See nearby member marker
+- [ ] Tap marker to open callout
+- [ ] Verify ETA displayed (e.g., "5 min")
+- [ ] Verify ETA format appropriate:
+  - "< 1 min" for very close
+  - "15 min" for medium distance
+  - "1h 30m" for long distance
+
+#### Accuracy
+- [ ] Compare ETA with actual distance
+- [ ] Verify walking speed assumption reasonable (5 km/h)
+- [ ] Move marker position
+- [ ] Verify ETA updates accordingly
+- [ ] Test with various distances:
+  - Very close (<100m)
+  - Medium (100m-1km)
+  - Far (>1km)
+
+#### Speed Descriptions (if implemented)
+- [ ] Verify speed description shown
+- [ ] Test: "Normal walk" for 5 km/h
+- [ ] Test: "Brisk walk" for 7 km/h
+- [ ] Test: "Jogging" for 10 km/h
+
+### 8.2 Polyline Paths
+
+#### Display
+- [ ] Navigate to Map screen
+- [ ] Have nearby member visible
+- [ ] Verify polyline drawn from your location to member
+- [ ] Verify polyline color appropriate
+- [ ] Verify polyline stroke width readable
+- [ ] Verify polyline doesn't obscure markers
+
+#### Multiple Members
+- [ ] Have multiple nearby members
+- [ ] Verify polyline to each member
+- [ ] Verify different colors or styling (if implemented)
+- [ ] Verify performance with 5+ polylines
+- [ ] Verify polylines don't overlap confusingly
+
+#### Real-time Updates
+- [ ] Have member move
+- [ ] Verify polyline updates smoothly
+- [ ] Verify smooth animation
+- [ ] Move your own location
+- [ ] Verify all polylines update
+
+#### Toggle Polylines (if implemented)
+- [ ] Find polyline toggle button
+- [ ] Tap to hide polylines
+- [ ] Verify all polylines hidden
+- [ ] Tap to show polylines
+- [ ] Verify all polylines appear
+
+### 8.3 Direction Indicators
+
+#### Bearing Calculation
+- [ ] View nearby member on map
+- [ ] Verify direction arrow or indicator
+- [ ] Verify arrow points toward member
+- [ ] Verify bearing accurate (compass direction)
+- [ ] Move member position
+- [ ] Verify arrow rotates accordingly
+
+#### Direction Labels
+- [ ] Verify direction description shown (e.g., "North", "Southeast")
+- [ ] Test with member in each cardinal direction
+- [ ] Verify labels accurate
+- [ ] Test with member moving
+- [ ] Verify label updates
+
+#### Visual Design
+- [ ] Verify arrow icon visible and clear
+- [ ] Verify arrow color contrasts with map
+- [ ] Verify arrow size appropriate
+- [ ] Test in light and dark mode
+- [ ] Verify arrow visible in both themes
+
+### 8.4 Last Seen Timestamps
+
+#### Display
+- [ ] View map with offline members
+- [ ] Verify "Last seen" timestamp shown
+- [ ] Verify format: "Just now", "5m ago", "2h ago", "3d ago"
+- [ ] Verify timestamp updates periodically
+- [ ] Verify online members don't show timestamp
+
+#### Stale Location Indicator
+- [ ] Have member go offline
+- [ ] Wait 15+ minutes
+- [ ] Verify member marker styled differently (greyed out)
+- [ ] Verify tooltip shows "Last seen 20m ago"
+- [ ] Verify polyline to stale member removed (optional)
+
+#### Real-time Updates
+- [ ] Member goes offline
+- [ ] Verify timestamp starts counting
+- [ ] Wait 1 minute
+- [ ] Verify timestamp updates to "1m ago"
+- [ ] Member comes back online
+- [ ] Verify "Last seen" removed, marker active
+
+### 8.5 Distance-Based Marker Styling
+
+#### Marker Colors
+- [ ] Verify very close members (<50m) have distinct color/icon
+- [ ] Verify medium distance (50-200m) different style
+- [ ] Verify far members (>200m) different style
+- [ ] Verify color scheme intuitive (e.g., green=close, yellow=medium, red=far)
+
+#### Marker Sizes
+- [ ] Verify closer members have larger markers
+- [ ] Verify far members have smaller markers
+- [ ] Verify your own marker always largest/distinct
+- [ ] Verify marker sizes don't obscure each other
+
+#### Marker Animations
+- [ ] Member enters proximity
+- [ ] Verify marker pulse/bounce animation
+- [ ] Verify animation smooth, not distracting
+- [ ] Member exits proximity
+- [ ] Verify marker animates back to normal
+
+### 8.6 Movement Detection
+
+#### Speed Calculation
+- [ ] Start moving (or simulate location changes)
+- [ ] Verify speed calculated accurately
+- [ ] Verify speed displayed (if shown)
+- [ ] Verify speed in appropriate units (km/h or mph)
+- [ ] Stop moving
+- [ ] Verify speed drops to 0
+
+#### Movement Indicators
+- [ ] While moving, verify movement icon/indicator shown
+- [ ] Verify indicator shows you're in motion
+- [ ] Verify direction of movement indicated
+- [ ] Stop moving
+- [ ] Verify indicator disappears or changes
+
+#### Map Following
+- [ ] Enable "follow mode" (if available)
+- [ ] Start moving
+- [ ] Verify map centers on your location automatically
+- [ ] Verify map rotates based on heading (if implemented)
+- [ ] Stop moving
+- [ ] Verify map stops auto-centering
+
+---
+
+## 9. SOUND & HAPTIC ALERTS ✨ NEW
+
+### 9.1 Distance-Based Sound Selection
+
+#### Sound Files
+- [ ] Verify sound files loaded correctly
+- [ ] Check logs for sound loading errors
+- [ ] Verify sounds exist in assets folder:
+  - warning.mp3 (for <20m)
+  - alert.mp3 (for 20-50m)
+  - notification.mp3 (for >50m)
+
+#### Close Proximity (<20m)
+- [ ] Move within 20m of another member
+- [ ] Verify "warning" sound plays
+- [ ] Verify sound appropriate (urgent/attention-grabbing)
+- [ ] Verify sound plays only once (not repeating)
+- [ ] Move away
+- [ ] Verify sound stops
+
+#### Medium Proximity (20-50m)
+- [ ] Be 20-50m from member
+- [ ] Trigger proximity alert
+- [ ] Verify "alert" sound plays
+- [ ] Verify sound less urgent than warning
+- [ ] Verify sound volume appropriate
+
+#### Far Proximity (>50m)
+- [ ] Be >50m from member
+- [ ] Trigger proximity alert
+- [ ] Verify "notification" sound plays
+- [ ] Verify sound gentle/subtle
+- [ ] Verify sound distinguishable from other notifications
+
+#### Sound Settings Integration
+- [ ] Go to Settings
+- [ ] Set alert style to "Silent"
+- [ ] Trigger proximity alert
+- [ ] Verify no sound plays
+- [ ] Set alert style to "Sound"
+- [ ] Trigger alert
+- [ ] Verify sound plays
+- [ ] Set alert style to "Both"
+- [ ] Verify sound + vibration
+
+#### Platform Differences
+- [ ] Test sounds on Android
+- [ ] Verify sounds play correctly
+- [ ] Test sounds on iOS
+- [ ] Verify sounds play correctly
+- [ ] Verify volume respects device settings
+
+### 9.2 Haptic Feedback
+
+#### General Interactions
+- [ ] Tap any button
+- [ ] Verify light haptic feedback
+- [ ] Tap toggle switch
+- [ ] Verify medium haptic feedback
+- [ ] Complete important action (save settings)
+- [ ] Verify heavy haptic feedback
+
+#### Success Feedback
+- [ ] Complete successful action (e.g., save settings)
+- [ ] Verify success haptic pattern
+- [ ] Verify pattern distinct from error
+
+#### Error Feedback
+- [ ] Trigger validation error
+- [ ] Verify error haptic pattern
+- [ ] Verify pattern feels negative/alerting
+- [ ] Verify different from success pattern
+
+#### Selection Feedback
+- [ ] Use slider (proximity radius)
+- [ ] Verify haptic feedback on drag
+- [ ] Use picker/selector
+- [ ] Verify haptic on selection change
+
+#### Haptic Settings
+- [ ] Test on device with haptics disabled
+- [ ] Verify app handles gracefully
+- [ ] Enable haptics on device
+- [ ] Verify all haptics work
+
+#### Platform Differences
+- [ ] Test on Android device
+- [ ] Verify vibration patterns work
+- [ ] Test on iPhone
+- [ ] Verify taptic engine patterns work
+- [ ] Verify feedback feels natural on both platforms
+
+---
+
+## 10. NAVIGATION & ROUTING
 
 ### 7.1 Bottom Tab Navigation
 
