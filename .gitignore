@@ -1,0 +1,16 @@
+# Firebase credentials - DO NOT COMMIT THESE!
+google-services.json
+GoogleService-Info.plist
+
+# Personal notes and temporary files
+*.txt
+nul
+*.yaml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
