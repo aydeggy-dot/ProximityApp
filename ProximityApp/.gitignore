@@ -80,17 +80,8 @@ yarn-error.log
 .env.development
 .env.production
 
-# Firebase credentials - DO NOT COMMIT THESE!
+# Firebase credentials - DO NOT COMMIT!
 google-services.json
 GoogleService-Info.plist
-
-# Personal notes and temporary files
-*.txt
-nul
-*.yaml
-
-# OS files
-Thumbs.db
-
-# IDE
-.vscode/
+android/app/google-services.json
+ios/GoogleService-Info.plist
