@@ -430,8 +430,27 @@ If you encounter issues:
 🚧 **In Progress**: Group features, real-time location broadcasting, proximity detection
 📋 **TODO**: In-app messaging, group management, advanced privacy controls
 
-**Version:** 2.0.0
+**Version:** 2.0.1
 **Status:** Production-Ready Core Features Implemented
+**GitHub:** https://github.com/aydeggy-dot/ProximityApp
+
+---
+
+## Recent Updates (November 16, 2025)
+
+### Critical Bug Fixes
+- ✅ Fixed distance calculation function compatibility
+- ✅ Fixed Firestore index field names for chat and alerts
+- ✅ Created firestore.indexes.json configuration file
+- ✅ Added comprehensive Firestore index setup guide
+
+### Firestore Index Improvements
+The app now includes a properly configured `firestore.indexes.json` file with all required composite indexes. Key fixes:
+- Chat queries now use `updatedAt` field (was: `lastMessageTimestamp`)
+- Alert queries now use `timestamp` field (was: `createdAt`)
+- All indexes include `__name__` field for proper pagination
+
+See `FIRESTORE_INDEX_SETUP.md` for deployment instructions.
 
 ---
 

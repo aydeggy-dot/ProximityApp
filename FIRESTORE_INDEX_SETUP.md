@@ -1,8 +1,10 @@
 # Firestore Index Setup Instructions
 
+**GitHub Repository:** https://github.com/aydeggy-dot/ProximityApp
+
 ## Critical: These indexes MUST be created for the app to work
 
-The app is showing errors because Firestore queries require composite indexes. Follow these steps:
+The app is showing errors because Firestore queries require composite indexes. The project includes a pre-configured `firestore.indexes.json` file that you can deploy automatically using Firebase CLI, or you can create the indexes manually using the methods below.
 
 ---
 

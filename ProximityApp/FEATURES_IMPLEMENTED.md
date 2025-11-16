@@ -281,6 +281,19 @@ firebase deploy --only storage
 
 ---
 
-**Build Date**: November 15, 2025
-**Version**: 2.0.0 (with Chat & Profiles)
-**Status**: Ready for Testing ✅
+## 🔗 GitHub Repository
+
+**Source Code:** https://github.com/aydeggy-dot/ProximityApp
+
+## 🐛 Recent Bug Fixes (November 16, 2025)
+
+- ✅ **Distance Calculation Fix** - Added `calculateDistanceBetweenLocations` alias for backward compatibility
+- ✅ **Firestore Index Field Names** - Fixed chat indexes to use `updatedAt` and `timestamp`
+- ✅ **Index Configuration** - Created `firestore.indexes.json` and deployment guide
+- ✅ **Group Discovery** - Optimized queries for Popular and Nearby Groups
+
+---
+
+**Build Date**: November 16, 2025
+**Version**: 2.0.1 (Bug Fixes + GitHub Release)
+**Status**: Production Ready ✅

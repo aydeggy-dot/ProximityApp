@@ -2,6 +2,22 @@
 
 A production-ready React Native mobile application that detects and notifies users when members of their configured groups are in close proximity. The app provides real-time location tracking, proximity alerts, background location monitoring, push notifications, and an interactive map interface with meet-up request functionality.
 
+**GitHub Repository:** https://github.com/aydeggy-dot/ProximityApp
+
+## Recent Updates (November 16, 2025)
+
+### Bug Fixes & Improvements
+- ✅ **Fixed distance calculation function** - Added backward compatibility (`calculateDistanceBetweenLocations`)
+- ✅ **Fixed Firestore indexes** - Corrected field names for chat (`updatedAt` instead of `lastMessageTimestamp`) and alerts (`timestamp` instead of `createdAt`)
+- ✅ **Firestore indexes configuration** - Created `firestore.indexes.json` with all required composite indexes
+- ✅ **Index deployment guide** - Added comprehensive `FIRESTORE_INDEX_SETUP.md`
+
+### New Features
+- ✅ **WhatsApp-style Chat System** - Real-time messaging with read receipts and delete functionality
+- ✅ **Instagram-style Profiles** - Photo galleries with captions, bio, and profile stats
+- ✅ **Group Scalability Phase 1** - Popular Groups and Nearby Groups discovery tabs
+- ✅ **Improved Performance** - Optimized Firestore queries with proper indexing
+
 ## Features
 
 ### Core Features

@@ -170,6 +170,36 @@ FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
 3. Accept the default security rules
 4. Click **"Done"**
 
+## Automated Index Deployment (Recommended)
+
+The project includes a pre-configured `firestore.indexes.json` file with all required indexes.
+
+### Option 1: Deploy via Firebase CLI
+```bash
+# Install Firebase CLI (if not installed)
+npm install -g firebase-tools
+
+# Login to Firebase
+firebase login
+
+# Initialize project (one-time setup)
+firebase init firestore
+
+# Deploy indexes
+firebase deploy --only firestore:indexes
+```
+
+### Option 2: Manual Upload
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Select your project
+3. Go to **Firestore Database** → **Indexes**
+4. Click the menu (⋮) and select **Import/Export**
+5. Upload the `firestore.indexes.json` file from the project root
+
+For detailed index setup instructions, see **FIRESTORE_INDEX_SETUP.md** in the project root.
+
+---
+
 ## Firestore Data Structure
 
 The app uses these collections:

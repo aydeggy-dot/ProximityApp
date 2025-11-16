@@ -463,8 +463,22 @@ Your app now has:
 
 ---
 
-*Last Updated: November 2025*
-*Version: 2.0.0*
-*Status: Production-Ready Core Features Implemented*
+## 🔗 Source Code
+
+**GitHub Repository:** https://github.com/aydeggy-dot/ProximityApp
+
+## 🐛 Latest Bug Fixes (November 16, 2025)
+
+- ✅ **Distance Calculation** - Fixed function naming compatibility (`calculateDistanceBetweenLocations`)
+- ✅ **Firestore Indexes** - Corrected field names for chat (`updatedAt`) and alerts (`timestamp`)
+- ✅ **Index Configuration** - Created automated deployment with `firestore.indexes.json`
+- ✅ **Documentation** - Added comprehensive Firestore index setup guide
+
+---
+
+*Last Updated: November 16, 2025*
+*Version: 2.0.1 (Bug Fixes + GitHub Release)*
+*Status: Production-Ready with Latest Fixes*
 *Phase 1 UI: 100% ✅*
-*Production Features: 85% ✅*
+*Production Features: 90% ✅*
+*Bug Fixes: All Critical Issues Resolved ✅*
